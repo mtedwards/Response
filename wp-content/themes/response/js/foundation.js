@@ -21,7 +21,6 @@
 
 // @codekit-prepend "foundation/foundation.topbar.js"
 
-
 $(document ).ready(function() {
     $(document).foundation();
 });

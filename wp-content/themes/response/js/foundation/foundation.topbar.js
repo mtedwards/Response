@@ -6,7 +6,7 @@
   Foundation.libs.topbar = {
     name : 'topbar',
 
-    version : '4.3.0',
+    version: '4.3.1',
 
     settings : {
       index : 0,
@@ -14,7 +14,7 @@
       custom_back_text: true,
       back_text: 'Back',
       is_hover: true,
-      mobile_show_parent_link: true,
+      mobile_show_parent_link: false,
       scrolltop : true, // jump to top when sticky nav menu toggle is clicked
       init : false
     },
@@ -65,62 +65,70 @@
       }
     },
 
+    toggle: function() {
+      var self = this;
+      var topbar = $('.top-bar, [data-topbar]'),
+          section = topbar.find('section, .section'),
+          titlebar = topbar.children('ul').first();
+
+      var offst = self.outerHeight(topbar);
+      if (self.breakpoint()) {
+        if (!self.rtl) {
+          section.css({left: '0%'});
+          section.find('>.name').css({left: '100%'});
+        } else {
+          section.css({right: '0%'});
+          section.find('>.name').css({right: '100%'});
+        }
+
+        section.find('li.moved').removeClass('moved');
+        topbar.data('index', 0);
+
+        topbar
+          .toggleClass('expanded')
+          .css('height', '');
+      }
+
+      if (!topbar.hasClass('expanded')) {
+        if (topbar.hasClass('fixed')) {
+          topbar.parent().addClass('fixed');
+          topbar.removeClass('fixed');
+          $('body').css('padding-top',offst);
+        }
+      } else if (topbar.parent().hasClass('fixed')) {
+        topbar.parent().removeClass('fixed');
+        topbar.addClass('fixed');
+        $('body').css('padding-top','0');
+
+        if (self.settings.scrolltop) {
+          window.scrollTo(0,0);
+        }
+      }
+    },
+
     timer : null,
 
     events : function () {
       var self = this;
-      var offst = this.outerHeight($('.top-bar, [data-topbar]'));
       $(this.scope)
         .off('.fndtn.topbar')
         .on('click.fndtn.topbar', '.top-bar .toggle-topbar, [data-topbar] .toggle-topbar', function (e) {
-          var topbar = $(this).closest('.top-bar, [data-topbar]'),
-              section = topbar.find('section, .section'),
-              titlebar = topbar.children('ul').first();
-
           e.preventDefault();
-
-          if (self.breakpoint()) {
-            if (!self.rtl) {
-              section.css({left: '0%'});
-              section.find('>.name').css({left: '100%'});
-            } else {
-              section.css({right: '0%'});
-              section.find('>.name').css({right: '100%'});
-            }
-
-            section.find('li.moved').removeClass('moved');
-            topbar.data('index', 0);
-
-            topbar
-              .toggleClass('expanded')
-              .css('height', '');
-          }
-
-          if (!topbar.hasClass('expanded')) {
-            if (topbar.hasClass('fixed')) {
-              topbar.parent().addClass('fixed');
-              topbar.removeClass('fixed');
-              $('body').css('padding-top',offst);
-            }
-          } else if (topbar.parent().hasClass('fixed')) {
-            topbar.parent().removeClass('fixed');
-            topbar.addClass('fixed');
-            $('body').css('padding-top','0');
-
-            if (self.settings.scrolltop) {
-              window.scrollTo(0,0);
-            }
-          }
+          self.toggle();
         })
 
         .on('click.fndtn.topbar', '.top-bar li.has-dropdown', function (e) {
-          if (self.breakpoint()) return;
-
           var li = $(this),
               target = $(e.target),
               topbar = li.closest('[data-topbar], .top-bar'),
               is_hover = topbar.data('topbar');
 
+          if(target.data('revealId')) {
+            self.toggle();
+            return;
+          }
+
+          if (self.breakpoint()) return;
           if (self.settings.is_hover && !Modernizr.touch) return;
 
           e.stopImmediatePropagation();
@@ -140,7 +148,8 @@
         })
 
         .on('click.fndtn.topbar', '.top-bar .has-dropdown>a, [data-topbar] .has-dropdown>a', function (e) {
-          if (self.breakpoint()) {
+          if (self.breakpoint() && $(window).width() != self.settings.breakPoint) {
+
             e.preventDefault();
 
             var $this = $(this),
@@ -280,13 +289,17 @@
       		});
           $window.scroll(function() {
             if ($window.scrollTop() > (distance)) {
-              $(klass).addClass("fixed");
-              $('body').css('padding-top',offst);
+              if (!$(klass).hasClass("fixed")) {
+                $(klass).addClass("fixed");
+                $('body').css('padding-top',offst);
+              }
             } else if ($window.scrollTop() <= distance) {
-              $(klass).removeClass("fixed");
-              $('body').css('padding-top','0');
+              if ($(klass).hasClass("fixed")) {
+                $(klass).removeClass("fixed");
+                $('body').css('padding-top','0');
+              }
             }
-        });
+          });
       }
     },
 
